@@ -1,3 +1,4 @@
+export default class PromiseBundle{}
 // The promisebundle, which mainly puts together the promises through a linker object and checks if everything was fetched
 class PromiseBundle {
     #canFetch = false;
