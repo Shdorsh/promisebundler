@@ -1,5 +1,5 @@
 // The promisebundle, which mainly puts together the promises through a linker object and checks if everything was fetched
-export default class PromiseBundle {
+class PromiseBundle {
     #canFetch = false;
     #ready = false;
     #sendDataToFunction;
@@ -9,7 +9,7 @@ export default class PromiseBundle {
     #fulfilledPromises = [];
 
     // new PromiseBundle({promisekey1: Promise1, promisekey2: Promise2, promisekey3: Promise3...}, callBackFunction, ?[functionArg1, functionArg2, ...] ?doesItSendItsResultsToFunction)
-    constructor(promises, callBackFunction, functionArgs=[], sendDataToFunction=true) {
+    constructor(promises, callBackFunction=undefined, functionArgs=[], sendDataToFunction=true) {
         this.addPromises(promises);
         this.#calledFunction = callBackFunction;
         this.#sendDataToFunction = sendDataToFunction;
@@ -67,7 +67,7 @@ export default class PromiseBundle {
 
     // actually sees if readied and no listeners remaining, then emits the set event
     #checkToRun() {
-        if(!this.#ready || Object.keys(this.#unfulfilledPromiseWrappers).length) {
+        if(!this.#ready || !(this.#calledFunction) || Object.keys(this.#unfulfilledPromiseWrappers).length) {
             return;
         }
 
@@ -79,7 +79,7 @@ export default class PromiseBundle {
             paramsArray.push(...this.#functionArgs);
         }
         
-        this.#calledFunction(paramsArray);
+        this.#calledFunction.apply(null, paramsArray);
     }
 
     // The linker object, that holds the bundler and the promise together, fetches and sets the data
@@ -122,7 +122,7 @@ export default class PromiseBundle {
     }
 }
 
-/* 
+/*
 // HOW TO USE THIS:
 
 // It looks way more orderly if you define your promises outside of the function
@@ -152,9 +152,9 @@ const myBundle = new PromiseBundle(
         .ready();
 
 
-// If you want to separate the data easily, don't forget to put your parameters in a nice array
+// You can call your function all normally like this
 
-function bundleResolve([myData, three, bestAlbum]) {
+function bundleResolve(myData, three, bestAlbum) {
     console.log(myData);
     console.log("I want " + three + " slices of pizza, please!");
     console.log("Best album in the world: " + bestAlbum);
