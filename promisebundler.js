@@ -8,7 +8,7 @@ export default class PromiseBundle {
     #unfulfilledPromiseWrappers = {};
     #fulfilledPromises = [];
 
-    // new PromiseBundle({promisekey1: Promise1, promisekey2: Promise2, promisekey3: Promise3...}, callBackFunction, ?doesItSendItsResultsToFunction)
+    // new PromiseBundle({promisekey1: Promise1, promisekey2: Promise2, promisekey3: Promise3...}, callBackFunction, ?[functionArg1, functionArg2, ...] ?doesItSendItsResultsToFunction)
     constructor(promises, callBackFunction, functionArgs=[], sendDataToFunction=true) {
         this.addPromises(promises);
         this.#calledFunction = callBackFunction;
@@ -60,7 +60,7 @@ export default class PromiseBundle {
         return this;
     }
 
-    // return the data so it can be used, in case anyon needs it
+    // return the data so it can be used, in case anyone needs it
     getData() {
         return this.#fulfilledPromises;
     }
@@ -104,7 +104,7 @@ export default class PromiseBundle {
                 return;
             }
 
-            // Forcefully parce everything into async JSON objects or JSON objects
+            // Forcefully parse everything into async JSON objects or JSON objects
             const results = await this.#promise.then(data => {
                 try {
                     data = data.json();
