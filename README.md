@@ -4,6 +4,10 @@
 
 The promisebundler package allows you more freedom and possibilities with bundling promises together.
 
+```
+npm i promisebundler
+```
+
 ## Creating a bundle
 
 ```
