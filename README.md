@@ -7,20 +7,29 @@ The promisebundler package allows you more freedom and possibilities with bundli
 ## Creating a bundle
 
 ```
-const myBundle = new PromiseBundle(?jsonPromises, ?fulfilledFunction ?fulfilledArgs, ?dataToFunction);
+const myBundle = new PromiseBundle(?jsonPromises, ?resolvedFunctionObject, ?rejectedFunctionObject, ?dataToFunction);
 ```
 
  - jsonPromises (optional json object with promises as values)
   - The promises that are being resolved by the bundle. It is optional, because you can also add them later on. The key you assign to each promise is te same key under which the promise's resolved data will be found later on.
 
-  - fulfilledFunction (optional callback function)
-    - This function is run when all the promises have been fulfilled and at least one promise resolved. If you are using PromiseBundle.strict(), it will not run as soon as a single promise was rejected.
+  - resolvedFunctionObject (optional json object)
+    - A json object running a function with given parameters and this context once all promises have been resolved.
 
- - fulfilledArgs (optional array)
-    - An array of values that will be given to the callback function when it starts running.
+ - rejectedFunctionObject (optional json object)
+    - A json object running a function with given parameters and this context once the promisebundle rejected the one or all promises, depending on strict setting.
 
  - dataToFunction (optional boolean)
     - If true, PromiseBundle will send the resolved promises' data automatically into the first argument of the callback function that runs on fulfilling every promise.
+
+For setting the functions, the json objects look like this:
+```
+{
+   'callbackFunction' : function() {...},
+   'args' : ['arg1', 'arg2', ...],
+   'thisContext' :  myObject
+}
+```
 
 
 ## Starting up the promise bundle
@@ -38,7 +47,7 @@ Both `PromiseBundle.allowFetch()` and `PromiseBundle.ready()` return myBunde and
 
 ## How promisebundler treats single promises
 
-Once you use the `PromiseBundle.allowFetch()` method, the promises will be fulfilled by an object named PromiseToBundleLinker, which runs them automatically (for now). If the promises resolve, their resulting data will be treated and saved in a JSON object under the key you provided myBundle with them. A different JSON object will be used for rejected promises. Both can be returned selectively or together with the following 3 methods:
+Once you use the `PromiseBundle.allowFetch()` method, the promises will be fulfilled by an object named PromiseToBundleLinker, which runs them automatically (for now). If the promises resolve, their resulting data will be treated and saved in a JSON object under the key you provided myBundle with them. A different JSON object will be used for rejected promises. As such, you don't need to worry too much about treating each promise's data selectively. Both can be returned selectively or together with the following 3 methods:
 
 ```
 myBundle.getResolvedData();
@@ -120,6 +129,24 @@ myBundle.removePromises("myPromise1","myPromise2", "myPromise3"...)
 When you remove unfulfilled promises, myBundle will automatically check if no more unfulfilled promises remain to see if it can run its function.
 
 As with the others, `PromiseBundle.removePromises()` return myBundle and can be chained with the other functions as well.
+
+### Running a single promise
+```
+myBundle.runPromise("myPromise", ?disableNoFetch);
+```
+
+You can tell the promisebundle to fetch a single promise. Once done, you can find its data using getData(). If fetching is disabled, you can overwrite this for that specific promise by toggling the optional `disableNoFetch` boolean to true. By default, it is set to false.
+
+### Changing resolved and rejected callback functions
+
+You can set the resolved and rejected functions directly with the following method:
+
+```
+myBundle.setResolvedFunction(myFunction, ['arg1', 'arg2', 'arg3'], callContext);
+myBundle.setRejectedFunction(myFunction, ['arg1', 'arg2', 'arg3'], callContext);
+```
+
+The functions return the promisebundler and can also be chained.
 
 ### Strictness setting
 

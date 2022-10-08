@@ -4,47 +4,32 @@ class PromiseBundle {
     #ready = false;
     #isStrict = false;
     #sendDataToFunction;
-    #calledFunction;
-    #functionArgs;
-    #unfulfilledPromiseLinkers = {};
+    #resolvedFunction = {
+        callbackFunction: null,
+        args : [],
+        thisContext : null
+    }
+    #rejectedFunction = {
+        callbackFunction: null,
+        args : [],
+        thisContext : null
+    }
+    #unfulfilledPromises = {};
     #resolvedPromises = {};
     #rejectedPromises = {};
 
-    // new PromiseBundle({promisekey1: Promise1, promisekey2: Promise2, promisekey3: Promise3...}, callBackFunction, ?[functionArg1, functionArg2, ...] ?doesItSendItsResultsToFunction)
-    constructor(promises = {}, callBackFunction = undefined, functionArgs = [], sendDataToFunction = true) {
+    constructor(promises = {}, resolvedFunctionData=null, rejectedFunctionData=null, sendDataToFunction = true) {
         this.addPromises(promises);
-        this.#calledFunction = callBackFunction;
+        this.#resolvedFunction = resolvedFunctionData;
+        this.#rejectedFunction = rejectedFunctionData;
         this.#sendDataToFunction = sendDataToFunction;
-        this.#functionArgs = functionArgs;
-    }
-
-    // add or delete as many promises as you want with a linker and adding it with a key to the object or deleting the key
-    addPromises(newPromises) {
-        for(const key in newPromises) {
-            this.#unfulfilledPromiseLinkers[key] = new this.#Linker(key, newPromises[key], this);
-        }
-
-        return this;
-    }
-
-    removePromises(...promisekeys) {
-        promisekeys.forEach(key => {
-            // Remove the promisebundle from the linker, then the promise from the unfulfilledPromiseLinkers
-            const removedLinker = this.#unfulfilledPromiseLinkers[key];
-            removedLinker.promiseBundle = undefined;
-            delete this.#unfulfilledPromiseLinkers[key];
-        });
-
-        this.#checkToRun();
-
-        return this;
     }
 
     // allow and disable fetch gives the user control on when a fetch can occur, possibly optimizing fetching
     allowFetch() {
         this.#canFetch = true;
-        for(const key in this.#unfulfilledPromiseLinkers) {
-            this.#unfulfilledPromiseLinkers[key].getFulfilledPromise();
+        for(const key in this.#unfulfilledPromises) {
+            this.runPromise(key);
         }
 
         return this;
@@ -92,88 +77,158 @@ class PromiseBundle {
         return this.#rejectedPromises;
     }
 
-    // actually sees if readied and no listeners remaining, then emits the set event
-    #checkToRun() {
-        // Check if the promise bundle is ready, has any unfulfilled linkers
-        if(!this.#ready || !(this.#calledFunction) || Object.keys(this.#unfulfilledPromiseLinkers).length) {
-            return;
+    // Running functions
+
+    // Setting functions
+    setResolvedFunction(callbackFunction, callbackArgs, callContext) {
+        this.#resolvedFunction = {
+            'function' : callbackFunction,
+            'args' : callbackArgs,
+            'thisContext' : callContext
         }
 
-        // If a promise failed and you are in strict mode, stop
-        if(this.#isStrict && Object.keys(this.#rejectedPromises).length) {
-            return;
-        }
-
-        let paramsArray = [];
-        if(this.#sendDataToFunction) {
-            paramsArray.push(this.getResolvedData());
-        }
-        if(this.#functionArgs.length) {
-            paramsArray.push(...this.#functionArgs);
-        }
-        
-        this.#calledFunction.apply(null, paramsArray);
+        return this;
     }
 
-    // The linker object, that holds the bundler and the promise together, fetches and sets the data
-    #Linker = class PromiseToBundleLinker {
-        #id;
-        #promise;
-        #promiseBundle;
-    
-        // new PromiseWrapper(id, Promise, bundle)
-        // Autofetches the promise
-        constructor(id, promise, bundle) {
-            this.#id = id;
-            this.#promise = promise;
-            this.#promiseBundle = bundle;
-            this.getFulfilledPromise();
+    setRejectedFunction(callbackFunction, callbackArgs, callContext) {
+        this.#rejectedFunction = {
+            'function' : callbackFunction,
+            'args' : callbackArgs,
+            'thisContext' : callContext 
         }
-    
-        // Fetches the promise, removes itself from the unfulfilled list, adds its data to promisebundle's and calls the bundle's check-to-run
-        async getFulfilledPromise() {
 
-            // If the bundler prevents fetching, don't fetch
-            if(!this.#promiseBundle.#canFetch) {
+        return this;
+    }
+
+    // actually sees if readied and no listeners remaining, then emits the set event
+    #checkToRun() {
+        if(!this.#ready) {
+            return;
+        }
+
+        // Different order of executing checks according to strictness
+        const logicTreeShuffler = [];
+        if(this.#isStrict) {
+            logicTreeShuffler.push(this.#checkRejected, this.#checkUnfulfilled, this.#checkResolved);
+        } else {
+            logicTreeShuffler.push(this.#checkUnfulfilled, this.#checkResolved, this.#checkRejected);
+        }
+
+        for(const logicCheck of logicTreeShuffler) {
+            if(logicCheck.call(this)) {
                 return;
             }
-
-            // Forcefully parse everything into async JSON objects or JSON objects
-            await this.#promise
-                .then(data => {
-                    // Get the results from the promise
-                    let results;
-                    switch(typeof(data)) {
-                        case 'object' :
-                            try {
-                                results = data.json();
-                                break;
-                            } catch {}
-
-                        case 'string' :
-                            try {
-                                results = JSON.parse(data);
-                                break;
-                            } catch {
-                                data = encodeURI(data);
-                            };
-                        
-                        default :
-                            results = data;
-                    }
-
-                    // Add it to the resolved promises
-                    this.#promiseBundle.#resolvedPromises[this.#id] = results;
-                })
-                .catch(handleRejected => {
-                    this.#promiseBundle.#rejectedPromises[this.#id] = encodeURI(handleRejected);
-                });
+        }
+    }
     
-            // Put the finished promises into the resolvedPromises object and try running the  promiseBundle's function
-            delete(this.#promiseBundle.#unfulfilledPromiseLinkers[this.#id]);
-            this.#promiseBundle.#checkToRun();
+    #checkUnfulfilled() {
+        if(Object.keys(this.#unfulfilledPromises).length) {
+            return true;
+        }
+
+        return false;
+    }
+
+    #checkRejected() {
+        if(Object.keys(this.#rejectedPromises).length) {
+            if(this.#rejectedFunction) {
+                this.#useFunction(this.#rejectedFunction, this.getRejectedData());
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    #checkResolved() {
+        if(Object.keys(this.#resolvedPromises).length) {
+            if(this.#resolvedFunction) {
+                this.#useFunction(this.#resolvedFunction, this.getResolvedData());
+            }
+            return true;
+        }
+        return false;
+    }
+
+    #useFunction(functionData, results) {
+        console.log(functionData);
+        const paramsArray = [];
+        if(this.#sendDataToFunction) {
+            paramsArray.push(results);
+        }
+        if(functionData.args) {
+            paramsArray.push(...functionData.args);
+        }
+        
+        functionData.callbackFunction.apply(functionData.thisContext, paramsArray);
+    }
+
+    // Promises
+    // add or delete as many promises as you want with a linker and adding it with a key to the object or deleting the key
+    addPromises(newPromises) {
+        for(const key in newPromises) {
+            this.#unfulfilledPromises[key] = newPromises[key];
+        }
+
+        return this;
+    }
+
+    removePromises(...promisekeys) {
+        promisekeys.forEach(key => {
+            // Remove the promise, simply
+            delete this.#unfulfilledPromises[key];
+        });
+
+        this.#checkToRun();
+
+        return this;
+    }
+
+    runPromise(key, disableNoFetch = false) {
+        if(!key in this.#unfulfilledPromises) {
+            console.error('Error: Could not find ${key} inside promise bundle!');
+            return this;
+        }
+
+        if(!disableNoFetch) {
+            if(!this.#canFetch) {
+                return;
+            }
+        }
+
+        this.#makePromiseRun(this.#unfulfilledPromises[key], key);
+    }
+
+    async #makePromiseRun(promise, id) {
+        await promise.then(data => {
+            // Add it to the resolved promises
+            this.#resolvedPromises[id] = this.#treatPromiseData(data);
+        })
+        .catch(handleRejected => {
+            this.#rejectedPromises[id] = this.#treatPromiseData(handleRejected);
+        });
+
+        // Put the finished promises into the resolvedPromises object and try running the  promiseBundle's function
+        delete(this.#unfulfilledPromises[id]);
+        this.#checkToRun();
+    }
+
+    #treatPromiseData(data) {
+        switch(typeof(data)) {
+            case 'object' :
+                try {
+                    return data.json();
+                } catch {}
+
+            case 'string' :
+                try {
+                    return JSON.parse(data);
+                } catch {
+                    data = encodeURI(data);
+                };
+            
+            default :
+                return data;
         }
     }
 }
-
-module.exports = PromiseBundle;
