@@ -56,8 +56,9 @@ For rejected promises, the errors will be encoded with encodeURI, then saved ins
 myBundle.getData();
 ```
 
-```
 myBundle.getData() simply wraps both results together under a resolved and rejected key. As such, you would get the following json object:
+
+```
 {
    'resolved' : {
       'firstResolvedKey' : firstPromiseData,
