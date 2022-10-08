@@ -35,6 +35,8 @@ class PromiseBundle {
             delete this.#unfulfilledPromiseLinkers[key];
         });
 
+        this.#checkToRun();
+
         return this;
     }
 
