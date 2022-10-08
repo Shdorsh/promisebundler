@@ -14,16 +14,16 @@ npm i promisebundler
 const myBundle = new PromiseBundle(?jsonPromises, ?resolvedFunctionObject, ?rejectedFunctionObject, ?dataToFunction);
 ```
 
- - jsonPromises (optional json object with promises as values)
+ - jsonPromises <sup>(optional json object with promises as values)</sup>
   - The promises that are being resolved by the bundle. It is optional, because you can also add them later on. The key you assign to each promise is te same key under which the promise's resolved data will be found later on.
 
-  - resolvedFunctionObject (optional json object)
+  - resolvedFunctionObject <sup>(optional json object)</sup>
     - A json object running a function with given parameters and this context once all promises have been resolved.
 
- - rejectedFunctionObject (optional json object)
+ - rejectedFunctionObject <sup>(optional json object)</sup>
     - A json object running a function with given parameters and this context once the promisebundle rejected the one or all promises, depending on strict setting.
 
- - dataToFunction (optional boolean)
+ - dataToFunction <sup>(optional boolean)</sup>
     - If true, PromiseBundle will send the resolved promises' data automatically into the first argument of the callback function that runs on fulfilling every promise.
 
 For setting the functions, the json objects look like this:
