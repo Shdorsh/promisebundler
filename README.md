@@ -25,20 +25,20 @@ const myBundle = new PromiseBundle(?jsonPromises, ?fulfilledFunction ?fulfilledA
 
 ## Starting up the promise bundle
 
-The promisebundle starts in an inactive state, disallowing automatic fulfilling of promises and also disallowing its function to run. In order to run this, you need to run the PromiseBundle.allowFetch() method and the PromiseBundle.ready() function, like this:
+The promisebundle starts in an inactive state, disallowing automatic fulfilling of promises and also disallowing its function to run. In order to run this, you need to run the `PromiseBundle.allowFetch()` method and the `PromiseBundle.ready()` function, like this:
 
 ```
 myBundle.allowFetch().ready();
 ```
 
-In order for the promisebundle to work correctly, meaning storing the fulfilled promises' data and running the fulfilled function correctly, you have to resolve them using the PromiseBundle.allowFetch() method.
+In order for the promisebundle to work correctly, meaning storing the fulfilled promises' data and running the fulfilled function correctly, you have to resolve them using the `PromiseBundle.allowFetch()` method.
 
-Both PromiseBundle.allowFetch() and PromiseBundle.ready() return myBunde and allow you to chain them.
+Both `PromiseBundle.allowFetch()` and `PromiseBundle.ready()` return myBunde and allow you to chain them.
 
 
 ## How promisebundler treats single promises
 
-Once you use myBundle's .allowFetch() method, the promises will be fulfilled by an object named PromiseToBundleLinker, which runs them automatically (for now). If the promises resolve, their resulting data will be treated and saved in a JSON object under the key you provided myBundle with them. A different JSON object will be used for rejected promises. Both can be returned selectively or together with the following 3 methods:
+Once you use the `myBundle.allowFetch()` method, the promises will be fulfilled by an object named PromiseToBundleLinker, which runs them automatically (for now). If the promises resolve, their resulting data will be treated and saved in a JSON object under the key you provided myBundle with them. A different JSON object will be used for rejected promises. Both can be returned selectively or together with the following 3 methods:
 
 ```
 myBundle.getResolvedData();
@@ -56,7 +56,7 @@ For rejected promises, the errors will be encoded with encodeURI, then saved ins
 myBundle.getData();
 ```
 
-myBundle.getData() simply wraps both results together under a resolved and rejected key. As such, you would get the following json object:
+`myBundle.getData()` simply wraps both results together under a resolved and rejected key. As such, you would get the following json object:
 
 ```
 {
@@ -85,13 +85,13 @@ If you want you can also stop automatic fetching or running of its function. To 
 myBundle.disableFetch();
 ```
 
-This stops myBundle from automatically fulfilling promises. As soon as myBundle.allowFetch() is called, the promises will be resolved again.
+This stops myBundle from automatically fulfilling promises. As soon as `myBundle.allowFetch()` is called, the promises will be resolved again.
 
 ```
 myBundle.unready();
 ```
 
-This stops myBundle from running its stored fulfilling function when all the promises have been resolved if myBundle is set to be strict, or at least one resolved and no unfulfilled promises remain if it is lax. If this however remains the same or myBundle manages to fulfill all the promises while unready, it will run its function as soon as you use myBundl.ready().
+This stops myBundle from running its stored fulfilling function when all the promises have been resolved if myBundle is set to be strict, or at least one resolved and no unfulfilled promises remain if it is lax. If this however remains the same or myBundle manages to fulfill all the promises while unready, it will run its function as soon as you use `myBundle.ready()`.
 
 Both myBundle.disableFetch() and myBundle.unready() return myBundle and can be chained with the other functions as well.
 
@@ -107,7 +107,7 @@ As with declaring a new bundle, the key will be used to store the promise's reso
 
 If you add a promise to myBundle and myBundle already ran its function, it will run it again, with all the data from the previous promises.
 
-Also, myBundle.addPromises() returns myBundle and can also be chained with the other functions.
+Also, `myBundle.addPromises()` returns myBundle and can also be chained with the other functions.
 
 ### Removing promises
 
@@ -119,7 +119,7 @@ myBundle.removePromises("myPromise1","myPromise2", "myPromise3"...)
 
 When you remove unfulfilled promises, myBundle will automatically check if no more unfulfilled promises remain to see if it can run its function.
 
-As with the others, myBundle.removePromises() return myBundle and can be chained with the other functions as well.
+As with the others, `myBundle.removePromises()` return myBundle and can be chained with the other functions as well.
 
 ### Strictness setting
 
@@ -137,4 +137,4 @@ myBundle.lax();
 
 This allows myBundle to run its function if no unfulfilled promises remain and at least one resolved properly. Using this, it will also make myBundle check and see if it can execute its function right away.
 
-Both myBundle.strict() and myBundle.lax() return myBundle and can also be chained with all the other functions
+Both `myBundle.strict()` and `myBundle.lax()` return myBundle and can also be chained with all the other functions.
