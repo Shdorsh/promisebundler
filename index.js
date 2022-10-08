@@ -7,7 +7,7 @@ class PromiseBundle {
     #calledFunction;
     #functionArgs;
     #unfulfilledPromiseLinkers = {};
-    #fulfilledPromises = {};
+    #resolvedPromises = {};
     #rejectedPromises = {};
 
     // new PromiseBundle({promisekey1: Promise1, promisekey2: Promise2, promisekey3: Promise3...}, callBackFunction, ?[functionArg1, functionArg2, ...] ?doesItSendItsResultsToFunction)
@@ -27,7 +27,7 @@ class PromiseBundle {
         return this;
     }
 
-    deletePromises(...promisekeys) {
+    removePromises(...promisekeys) {
         promisekeys.forEach(key => {
             // Remove the promisebundle from the linker, then the promise from the unfulfilledPromiseLinkers
             const removedLinker = this.#unfulfilledPromiseLinkers[key];
@@ -75,12 +75,17 @@ class PromiseBundle {
 
     lax() {
         this.#isStrict = false;
+        this.#checkToRun();
         return this;
     }
 
     // return the data so it can be used, in case anyone needs it
     getData() {
-        return this.#fulfilledPromises;
+        return {"resolved" : this.#resolvedPromises, "rejected" : this.#rejectedPromises};
+    }
+
+    getResolvedData() {
+        return this.#resolvedPromises;
     }
 
     getRejectedData() {
@@ -101,7 +106,7 @@ class PromiseBundle {
 
         let paramsArray = [];
         if(this.#sendDataToFunction) {
-            paramsArray.push(this.getData());
+            paramsArray.push(this.getResolvedData());
         }
         if(this.#functionArgs.length) {
             paramsArray.push(...this.#functionArgs);
@@ -134,30 +139,38 @@ class PromiseBundle {
             }
 
             // Forcefully parse everything into async JSON objects or JSON objects
-            const results = await this.#promise
+            await this.#promise
                 .then(data => {
-                    console.log("Type: " + typeof(data));
+                    // Get the results from the promise
+                    let results;
                     switch(typeof(data)) {
-                        case 'object':
-                            return data.json();
-
-                        case 'string':
+                        case 'object' :
                             try {
-                                return JSON.parse(data);
-                            } catch {};
+                                results = data.json();
+                                break;
+                            } catch {}
+
+                        case 'string' :
+                            try {
+                                results = JSON.parse(data);
+                                break;
+                            } catch {
+                                data = encodeURI(data);
+                            };
                         
-                        default:
-                            return {'data': data};
-                    
+                        default :
+                            results = data;
                     }
+
+                    // Add it to the resolved promises
+                    this.#promiseBundle.#resolvedPromises[this.#id] = results;
                 })
                 .catch(handleRejected => {
-                    this.#promiseBundle.#rejectedPromises[this.#id] = handleRejected;
+                    this.#promiseBundle.#rejectedPromises[this.#id] = encodeURI(handleRejected);
                 });
     
-            // Put the finished promises into the fulfilledPromises object and try running the  promiseBundle's function
+            // Put the finished promises into the resolvedPromises object and try running the  promiseBundle's function
             delete(this.#promiseBundle.#unfulfilledPromiseLinkers[this.#id]);
-            this.#promiseBundle.#fulfilledPromises[this.#id] = results;
             this.#promiseBundle.#checkToRun();
         }
     }
