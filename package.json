@@ -1,0 +1,25 @@
+{
+  "name": "promisebundler",
+  "version": "0.1.0",
+  "description": "A package which contains a PromiseBundle object, that allows you to bundle promises together, add and delete more after the PromiseBundle has been created, stop execution after a single reject or more. The aim is to give you all the freedom that you can have when it comes to bundling promises.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shdorsh/promisebundler.git"
+  },
+  "keywords": [
+    "promise",
+    "bundle",
+    "class",
+    "async"
+  ],
+  "author": "Shdorsh",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Shdorsh/promisebundler/issues"
+  },
+  "homepage": "https://github.com/Shdorsh/promisebundler#readme"
+}

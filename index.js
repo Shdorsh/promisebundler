@@ -12,7 +12,7 @@ class PromiseBundle {
     #rejectedPromises = {};
 
     // new PromiseBundle({promisekey1: Promise1, promisekey2: Promise2, promisekey3: Promise3...}, callBackFunction, ?[functionArg1, functionArg2, ...] ?doesItSendItsResultsToFunction)
-    constructor(promises, callBackFunction=undefined, functionArgs=[], sendDataToFunction=true) {
+    constructor(promises = {}, callBackFunction = undefined, functionArgs = [], sendDataToFunction = true) {
         this.addPromises(promises);
         this.#calledFunction = callBackFunction;
         this.#sendDataToFunction = sendDataToFunction;
@@ -30,6 +30,9 @@ class PromiseBundle {
 
     deletePromises(...promisekeys) {
         promisekeys.forEach(key => {
+            // Remove the promisebundle from the linker, then the promise from the unfulfilledPromiseLinkers
+            const removedLinker = this.#unfulfilledPromiseLinkers[key];
+            removedLinker.promiseBundle = undefined;
             delete this.#unfulfilledPromiseLinkers[key];
         });
 
@@ -123,6 +126,7 @@ class PromiseBundle {
     
         // Fetches the promise, removes itself from the unfulfilled list, adds its data to promisebundle's and calls the bundle's check-to-run
         async getFulfilledPromise() {
+
             // If the bundler prevents fetching, don't fetch
             if(!this.#promiseBundle.#canFetch) {
                 return;
@@ -157,45 +161,3 @@ class PromiseBundle {
         }
     }
 }
-
-
-// HOW TO USE THIS:
-
-// It looks way more orderly if you define your promises outside of the function
-
-const swapiPromise = fetch("https://swapi.dev/api/people/1");
-const jsonStringPromise = new Promise((resolve, reject) => resolve('{"a": true, "b": false}'));
-const numberPromise = new Promise((resolve, reject) => reject(65));
-
-
-// This *mess* is what it looks like:
-
-    // First a JSON object where you give the resulting json from the promise a key,
-    // then a callback function,
-    // an optional array of parameters given to the callback function and 
-    // a boolean for if you want to send the resulting JSON object too.
-
-// You can always get the JSON object with PromiseBundle.getData(). Also, most methods chain for easier use.
-/*
-const myBundle = new PromiseBundle(
-    {
-        "swapi" : swapiPromise,
-        "jsonString" : jsonStringPromise,
-        "number" : numberPromise
-    },
-    bundleResolve,
-    [3, "Turtleneck & Chain"],
-    true)
-        .lax()
-        .allowFetch()
-        .ready();
-
-
-// You can call your function all normally like this
-
-function bundleResolve(myData, three, bestAlbum) {
-    console.log(myData);
-    console.log("I want " + three + " slices of pizza, please!");
-    console.log("Best album in the world: " + bestAlbum);
-}
-*/
