@@ -57,7 +57,7 @@ Once you use the `PromiseBundle.allowFetch()` method, the promises will be fulfi
 myBundle.getResolvedData();
 ```
 
-For resolved promises, the data will be automatically converted into a json object if possible (string or fetch result). If it is not, the data will be encoded if a string, then stored directly under the promise's key inside of the resolved promises json object.
+For resolved promises, the data will be automatically converted into a json object if possible (string or fetch result). If the data is a string, but not parsable into a json object, it will have its quotation marks and template literals escaped automatically. Any data returned by resolving or rejecting a promise will find itself under the given key automatically.
 
 ```
 myBundle.getRejectedData();
@@ -169,3 +169,27 @@ myBundle.lax();
 This allows myBundle to run its function if no unfulfilled promises remain and at least one resolved properly. Using this, it will also make myBundle check and see if it can execute its function right away.
 
 Both `PromiseBundle.strict()` and `PromiseBundle.lax()` return myBundle and can also be chained with all the other functions.
+
+### Clearing data
+
+```
+myBundle.clearResolvedData(?key1, ?key2, ?key3...)
+```
+
+```
+myBundle.clearRejectedData(?key1, ?key2, ?key3...)
+```
+
+
+2 functions exist for clearing data:
+   - `PromiseBundle.clearResolvedData()` for data gotten by `PromiseBundle.getResolvedData()`
+   - `PromiseBundle.clearRejectedData()` for data gotten by `PromiseBundle.clearResolvedData()`
+
+They both can take either no parameters or multiple keys as parameters. When you provide no key, all the data from the respective json object will be deleted. If you do, only the selected keys will be deleted.
+
+Both functions return the PromiseBundle object and can be chained with all the others.
+
+
+## More to come:
+
+I am currently checking what I could possibly still add to this package to make it more complete. Retrying and possibly a race mode seem like attractive options to me. If you have any ideas to make the package better or simply iron out bugs, feel free to help out via GitHub!

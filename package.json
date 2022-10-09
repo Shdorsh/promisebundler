@@ -12,9 +12,11 @@
   },
   "keywords": [
     "promise",
+    "promises",
+    "promises.all",
     "bundle",
-    "class",
-    "async"
+    "async",
+    "asynchronous"
   ],
   "author": "Shdorsh",
   "license": "ISC",

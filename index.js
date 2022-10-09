@@ -1,4 +1,4 @@
-// The promisebundle, which mainly puts together the promises through a linker object and checks if everything was fetched
+// The promisebundle, which mainly puts together the promises and checks if everything was fetched
 class PromiseBundle {
     #canFetch = false;
     #ready = false;
@@ -77,6 +77,30 @@ class PromiseBundle {
         return this.#rejectedPromises;
     }
 
+    clearResolvedData(...keys) {
+        if(!keys.length) {
+            this.#resolvedPromises = {};
+            return this;
+        }
+
+        keys.forEach(key => {
+            delete this.#resolvedPromises[key];
+        })
+        return this;
+    }
+
+    clearRejectedData(...keys) {
+        if(!keys.length) {
+            this.#resolvedPromises = {};
+            return this;
+        }
+
+        keys.forEach(key => {
+            delete this.#rejectedPromises[key];
+        })
+        return this;
+    }
+
     // Running functions
 
     // Setting functions
@@ -151,7 +175,6 @@ class PromiseBundle {
     }
 
     #useFunction(functionData, results) {
-        console.log(functionData);
         const paramsArray = [];
         if(this.#sendDataToFunction) {
             paramsArray.push(results);
@@ -164,10 +187,12 @@ class PromiseBundle {
     }
 
     // Promises
-    // add or delete as many promises as you want with a linker and adding it with a key to the object or deleting the key
+    // add or delete as many promises as you want with a key to the object or delete the objects with their respective keys
     addPromises(newPromises) {
         for(const key in newPromises) {
+            console.log(typeof(newPromises[key]))
             this.#unfulfilledPromises[key] = newPromises[key];
+            this.runPromise(key);
         }
 
         return this;
@@ -186,7 +211,7 @@ class PromiseBundle {
 
     runPromise(key, disableNoFetch = false) {
         if(!key in this.#unfulfilledPromises) {
-            console.error('Error: Could not find ${key} inside promise bundle!');
+            console.error(`Error: Could not find ${key} inside promise bundle!`);
             return this;
         }
 
@@ -224,11 +249,65 @@ class PromiseBundle {
                 try {
                     return JSON.parse(data);
                 } catch {
-                    data = encodeURI(data);
+                    data = data.replace(`"`,`\"`).replace("'","\'").replace('`','\`');
                 };
             
             default :
                 return data;
         }
     }
+}
+
+
+
+
+// HOW TO USE THIS:
+
+// It looks way more orderly if you define your promises outside of the function
+
+const swapiPromise = fetch("https://swapi.dev/api/people/1");
+const jsonStringPromise = new Promise((resolve, reject) => resolve('{"a": true, "b": false}'));
+const numberPromise = new Promise((resolve, reject) => reject(65));
+
+
+// This *mess* is what it looks like:
+
+    // First a JSON object where you give the resulting json from the promise a key,
+    // then a callback function,
+    // an optional array of parameters given to the callback function and 
+    // a boolean for if you want to send the resulting JSON object too.
+
+// You can always get the JSON object with PromiseBundle.getData(). Also, most methods chain for easier use.
+
+const myBundle = new PromiseBundle(
+    {
+        "swapi" : swapiPromise,
+        "jsonString" : jsonStringPromise,
+        "number" : numberPromise
+    },
+    {
+        callbackFunction: bundleResolve,
+        args: [3, "Turtleneck & Chain"],
+        thisContext: null
+    },
+    null,
+    true)
+        .allowFetch()
+        .ready();
+
+
+// You can call your function all normally like this
+
+function bundleResolve(myData, three, bestAlbum) {
+    //console.log("test");
+    console.log(myBundle.getData());
+    //console.log("I want " + three + " slices of pizza, please!");
+    //console.log("Best album in the world: " + bestAlbum);
+
+    myBundle.addPromises(
+        {
+            'theyAddItAgainAgnes': new Promise((resolve, reject) => {
+                resolve(`that's it hun, exactly how my bros at lmfao said: "sorry for party rockin! Now let's get funky in this town!`);
+            })
+        });
 }
